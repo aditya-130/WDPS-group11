@@ -79,17 +79,7 @@ qa_dict = {
     "What is the tallest mountain in the world?": "Mount Everest is the tallest mountain in the world, standing at 8,848.86 meters (29,031.7 feet).",
     "Who wrote the play 'Romeo and Juliet'?": "The play 'Romeo and Juliet' was written by William Shakespeare in the early stages of his career."
 }
-<<<<<<< HEAD
 
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> 2db3c16 (entity linker)
-=======
->>>>>>> b27be16 (made it dynamic, fixed formatting in the output, added cardinal in the omit_labels list)
->>>>>>> lydia
 qa_list = list(qa_dict.items())
 index = 5
 if 0 <= index < len(qa_list):
@@ -98,12 +88,6 @@ if 0 <= index < len(qa_list):
     print(f"Answer: {answer}")
 else:
     print("Invalid index")
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> b27be16 (made it dynamic, fixed formatting in the output, added cardinal in the omit_labels list)
 """
 
 sys.stderr = open(os.devnull, 'w') # prevents printing warnings like "llama_new_context_with_model: n_ctx_per_seq (512) < n_ctx_train (4096) -- the full capacity of the model will not be utilized"
