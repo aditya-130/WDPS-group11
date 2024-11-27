@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from llama_cpp import Llama
 import spacy
 import requests
@@ -7,6 +8,16 @@ import sys
 def search_wikipedia(entity_name, entity_label):
     search_url = f"https://en.wikipedia.org/w/api.php"
     entity_name = entity_name.replace(" ", "_")
+=======
+import spacy
+import requests
+
+def search_wikipedia(entity_name, entity_label):
+
+    search_url = f"https://en.wikipedia.org/w/api.php"
+    entity_name = entity_name.replace(" ", "_")
+
+>>>>>>> 2db3c16 (entity linker)
     label_to_search_term = {
         "ORG": f"{entity_name} (company)",  
         "PRODUCT": f"{entity_name} (product)",
@@ -29,6 +40,10 @@ def search_wikipedia(entity_name, entity_label):
         'format': 'json',
         'utf8': 1
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2db3c16 (entity linker)
     response = requests.get(search_url, params=params)
     
     if response.status_code == 200:
@@ -40,10 +55,20 @@ def search_wikipedia(entity_name, entity_label):
             return f"https://en.wikipedia.org/wiki/{top_result_title.replace(' ', '_')}"
     
     return None
+<<<<<<< HEAD
 def link_entities_to_wikipedia(text):
     doc = nlp(text)
     entity_links = {}
     omit_labels = {"DATE", "TIME", "MONEY", "PERCENT", "CARDINAL"}
+=======
+
+def link_entities_to_wikipedia(text):
+
+    doc = nlp(text)
+    entity_links = {}
+    omit_labels = {"DATE", "TIME", "MONEY", "PERCENT"}
+
+>>>>>>> 2db3c16 (entity linker)
     for ent in doc.ents:
         entity_name = ent.text
         entity_label = ent.label_
@@ -51,6 +76,7 @@ def link_entities_to_wikipedia(text):
         if entity_label in omit_labels:
             continue
         
+<<<<<<< HEAD
         # print(f"{entity_name}: {entity_label}")
         link = search_wikipedia(entity_name, entity_label)
         if link:
@@ -59,6 +85,16 @@ def link_entities_to_wikipedia(text):
 
 
 """
+=======
+        print(f"{entity_name}: {entity_label}")
+        link = search_wikipedia(entity_name, entity_label)
+        if link:
+            entity_links[ent.text] = link
+
+    return entity_links
+
+
+>>>>>>> 2db3c16 (entity linker)
 qa_dict = {
     "What is the capital of Turkey": "The capital of Turkey is Ankara. It became the capital in 1923, replacing Istanbul (formerly Constantinople) as the center of government.",
     "Who founded the company Apple": "Apple was founded by Steve Jobs, Steve Wozniak, and Ronald Wayne in 1976.",
@@ -72,6 +108,10 @@ qa_dict = {
     "What is the tallest mountain in the world?": "Mount Everest is the tallest mountain in the world, standing at 8,848.86 meters (29,031.7 feet).",
     "Who wrote the play 'Romeo and Juliet'?": "The play 'Romeo and Juliet' was written by William Shakespeare in the early stages of his career."
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2db3c16 (entity linker)
 qa_list = list(qa_dict.items())
 index = 5
 if 0 <= index < len(qa_list):
@@ -80,6 +120,7 @@ if 0 <= index < len(qa_list):
     print(f"Answer: {answer}")
 else:
     print("Invalid index")
+<<<<<<< HEAD
 """
 
 sys.stderr = open(os.devnull, 'w') # prevents printing warnings like "llama_new_context_with_model: n_ctx_per_seq (512) < n_ctx_train (4096) -- the full capacity of the model will not be utilized"
@@ -101,11 +142,14 @@ print('\033[1m' + "\nText returned by the language model (B) (llama 2, 70B):"  +
 
 
 
+=======
+>>>>>>> 2db3c16 (entity linker)
 
 nlp = spacy.load('en_core_web_lg')
 answer_entity_links = link_entities_to_wikipedia(answer)
 question_entity_links = link_entities_to_wikipedia(question)
 
+<<<<<<< HEAD
 print('\033[1m' + "Entities extracted:\n" + '\033[0m')
 # print("\nLinked Entities in the Answer:")
 for entity, link in answer_entity_links.items():
@@ -113,3 +157,12 @@ for entity, link in answer_entity_links.items():
 # print("\nLinked Entities in the Question:")
 for entity, link in question_entity_links.items():
     print(f"{entity}: {link}")
+=======
+print("\nLinked Entities in the Answer:")
+for entity, link in answer_entity_links.items():
+    print(f"{entity}: {link}")
+
+print("\nLinked Entities in the Question:")
+for entity, link in question_entity_links.items():
+    print(f"{entity}: {link}")
+>>>>>>> 2db3c16 (entity linker)
