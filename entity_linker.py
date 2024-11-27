@@ -1,8 +1,11 @@
+from llama_cpp import Llama
 import spacy
 import requests
+import os
+import sys
+
 
 def search_wikipedia(entity_name, entity_label):
-
     search_url = f"https://en.wikipedia.org/w/api.php"
     entity_name = entity_name.replace(" ", "_")
 
@@ -41,11 +44,11 @@ def search_wikipedia(entity_name, entity_label):
     
     return None
 
-def link_entities_to_wikipedia(text):
 
+def link_entities_to_wikipedia(text):
     doc = nlp(text)
     entity_links = {}
-    omit_labels = {"DATE", "TIME", "MONEY", "PERCENT"}
+    omit_labels = {"DATE", "TIME", "MONEY", "PERCENT", "CARDINAL"}
 
     for ent in doc.ents:
         entity_name = ent.text
@@ -54,14 +57,15 @@ def link_entities_to_wikipedia(text):
         if entity_label in omit_labels:
             continue
         
-        print(f"{entity_name}: {entity_label}")
+        # print(f"{entity_name}: {entity_label}")
         link = search_wikipedia(entity_name, entity_label)
         if link:
             entity_links[ent.text] = link
-
     return entity_links
 
 
+
+"""
 qa_dict = {
     "What is the capital of Turkey": "The capital of Turkey is Ankara. It became the capital in 1923, replacing Istanbul (formerly Constantinople) as the center of government.",
     "Who founded the company Apple": "Apple was founded by Steve Jobs, Steve Wozniak, and Ronald Wayne in 1976.",
@@ -75,7 +79,17 @@ qa_dict = {
     "What is the tallest mountain in the world?": "Mount Everest is the tallest mountain in the world, standing at 8,848.86 meters (29,031.7 feet).",
     "Who wrote the play 'Romeo and Juliet'?": "The play 'Romeo and Juliet' was written by William Shakespeare in the early stages of his career."
 }
+<<<<<<< HEAD
 
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2db3c16 (entity linker)
+=======
+>>>>>>> b27be16 (made it dynamic, fixed formatting in the output, added cardinal in the omit_labels list)
+>>>>>>> lydia
 qa_list = list(qa_dict.items())
 index = 5
 if 0 <= index < len(qa_list):
@@ -84,15 +98,43 @@ if 0 <= index < len(qa_list):
     print(f"Answer: {answer}")
 else:
     print("Invalid index")
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> b27be16 (made it dynamic, fixed formatting in the output, added cardinal in the omit_labels list)
+"""
+
+sys.stderr = open(os.devnull, 'w') # prevents printing warnings like "llama_new_context_with_model: n_ctx_per_seq (512) < n_ctx_train (4096) -- the full capacity of the model will not be utilized"
+
+model_path = "models/llama-2-7b.Q4_K_M.gguf"
+
+question = input('\033[1m' + "Input (A): " + '\033[0m')
+llm = Llama(model_path=model_path, verbose=False)
+output = llm(
+      question, # Prompt
+      max_tokens=128
+      # stop = ['Q:', '?']
+      # stop=["Q:", "\n"], # Stop generating just before the model would generate a new question
+      # echo=True # Echo the prompt back in the output
+)
+answer = output['choices'][0]['text']
+
+print('\033[1m' + "\nText returned by the language model (B) (llama 2, 70B):"  + '\033[0m', answer, '\n') 
+
 
 nlp = spacy.load('en_core_web_lg')
 answer_entity_links = link_entities_to_wikipedia(answer)
 question_entity_links = link_entities_to_wikipedia(question)
 
-print("\nLinked Entities in the Answer:")
+
+print('\033[1m' + "Entities extracted:\n" + '\033[0m')
+# print("\nLinked Entities in the Answer:")
 for entity, link in answer_entity_links.items():
     print(f"{entity}: {link}")
-
-print("\nLinked Entities in the Question:")
+# print("\nLinked Entities in the Question:")
 for entity, link in question_entity_links.items():
+    print(f"{entity}: {link}")
+
     print(f"{entity}: {link}")
