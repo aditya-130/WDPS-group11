@@ -77,13 +77,13 @@ def process_questions_from_file(input_filename, output_filename):
                 print(f"Skipping invalid line: {line.strip()}")
 
 if __name__ == "__main__":
-    sys.stderr = open(os.devnull, 'w')  # Suppress warnings
+    sys.stderr = open(os.devnull, 'w')
 
-    model_path = "models/llama-2-7b.Q4_K_M.gguf"  # Replace with your model path
+    model_path = "models/llama-2-7b.Q4_K_M.gguf"
     llm = Llama(model_path=model_path, verbose=False)
     nlp = spacy.load('en_core_web_lg')
 
-    input_filename = "input.txt"  # Replace with your input file
-    output_filename = "output.txt"  # Replace with your desired output file
-
+    input_filename = "input.txt"  
+    output_filename = "output.txt"
+    
     process_questions_from_file('input.txt', 'output_file')
