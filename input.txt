@@ -1,0 +1,4 @@
+question-001	"What is the capital of Turkey"
+question-002	"Who founded the company Apple"
+question-003	"Is Managua the capital of Nicaragua?"
+question-004	"What year was Vrije University Amsterdam established"
