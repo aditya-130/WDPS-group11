@@ -65,7 +65,6 @@ def process_questions_from_file(input_filename, output_filename):
         for line in infile:
             try:
                 question_id, question_text = line.strip().split('\t')
-                print(question_text)
                 output = llm(question_text, max_tokens=128)
                 answer = output['choices'][0]['text']
 
