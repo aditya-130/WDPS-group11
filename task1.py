@@ -86,4 +86,4 @@ if __name__ == "__main__":
     input_filename = "input.txt"  
     output_filename = "output.txt"
     
-    process_questions_from_file('input.txt', 'output_file')
+    process_questions_from_file('input.txt', 'output.txt')
