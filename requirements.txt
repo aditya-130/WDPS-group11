@@ -1,0 +1,6 @@
+pip install spacy
+pip install simple_colors
+pip install nltk
+pip install requests
+pip install llama-cpp-python
+python -m spacy download en_core_web_lg
