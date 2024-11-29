@@ -1,114 +1,90 @@
-# Imports
-# Llama
 from llama_cpp import Llama
-
-# Nltk
-import nltk
-from nltk.tokenize import word_tokenize
-from nltk.tag import pos_tag
-
-# Simple Colors
-from simple_colors import *
-
-# scraping
+import spacy
 import requests
-from fake_useragent import UserAgent
- 
 import os
 import sys
 
-# Nltk Prerequisites 
-nltk.download('punkt_tab')
-nltk.download('averaged_perceptron_tagger_eng')
+def search_wikipedia(entity_name, entity_label):
+    """Searches Wikipedia for a given entity and returns the URL of the top result."""
+    search_url = f"https://en.wikipedia.org/w/api.php"
+    entity_name = entity_name.replace(" ", "_")
+    label_to_search_term = {
+        "ORG": f"{entity_name} (company)",  
+        "PRODUCT": f"{entity_name} (product)",
+        "PERSON": f"{entity_name} (person)",  
+        "GPE": f"{entity_name} (place)",
+        "FAC": f"{entity_name} (building)",
+        "LOC": f"{entity_name} (location)", 
+        "DATE": f"{entity_name} (date)", 
+        "TIME": f"{entity_name} (time)",  
+        "MONEY": f"{entity_name} (money)",  
+        "PERCENT": f"{entity_name} (percent)" 
+    }
+    
+    search_term = label_to_search_term.get(entity_label, entity_name)
+    
+    params = {
+        'action': 'query',
+        'list': 'search',
+        'srsearch': search_term,
+        'format': 'json',
+        'utf8': 1
+    }
+    response = requests.get(search_url, params=params)
+    
+    if response.status_code == 200:
+        data = response.json()
+        search_results = data['query']['search']
+        
+        if search_results:
+            top_result_title = search_results[0]['title']
+            return f"https://en.wikipedia.org/wiki/{top_result_title.replace(' ', '_')}"
+    
+    return None
 
-def preprocess(txt):
-    txt = nltk.word_tokenize(txt)
-    txt = nltk.pos_tag(txt)
-    return txt
+def link_entities_to_wikipedia(text):
+    """Identifies named entities in a text and links them to Wikipedia."""
+    doc = nlp(text)
+    entity_links = {}
+    omit_labels = {"DATE", "TIME", "MONEY", "PERCENT", "CARDINAL"}
+    for ent in doc.ents:
+        entity_name = ent.text
+        entity_label = ent.label_
+        
+        if entity_label in omit_labels:
+            continue
+        
+        link = search_wikipedia(entity_name, entity_label)
+        if link:
+            entity_links[ent.text] = link
+    return entity_links
 
-def attempt_request(url: str, attempts: int = 3, text_output: bool = True) -> str:
+def process_questions_from_file(input_filename, output_filename):
+    """Reads questions from a file, generates answers, and writes them to another file."""
+    with open(input_filename, 'r') as infile, open(output_filename, 'w') as outfile:
+        for line in infile:
+            try:
+                question_id, question_text = line.strip().split('\t')
+                print(question_text)
+                output = llm(question_text, max_tokens=128)
+                answer = output['choices'][0]['text']
 
-    # headers
-    ua = UserAgent(browsers="chrome", min_percentage=2.0)
-    headers = {"User-Agent": str(ua.random)}
+                outfile.write(f'{question_id}\tR"{answer}"\n')
 
-    # response placeholder
-    response = None
+                answer_entity_links = link_entities_to_wikipedia(answer)
+                for entity, link in answer_entity_links.items():
+                    outfile.write(f'{question_id}\tE"{entity}"\t{link}\n')  
+            except ValueError:
+                print(f"Skipping invalid line: {line.strip()}")
 
-    # loop over attempts
-    for attempt in range(0, attempts):
+if __name__ == "__main__":
+    sys.stderr = open(os.devnull, 'w')  # Suppress warnings
 
-        # if successful, stop attempts
-        try:
-            response = requests.get(url, headers=headers)
-            if response.status_code == 200:
-                return response.status_code
+    model_path = "models/llama-2-7b.Q4_K_M.gguf"  # Replace with your model path
+    llm = Llama(model_path=model_path, verbose=False)
+    nlp = spacy.load('en_core_web_lg')
 
-        # if exception, check attempts
-        except Exception as e:
-            # if final attempt, stop attempts
-            if attempt == attempts - 1:
-                exception = str(e)
-                break
-            else:
-                time.sleep(random.uniform(1, 3))
-                continue
+    input_filename = "input.txt"  # Replace with your input file
+    output_filename = "output.txt"  # Replace with your desired output file
 
-    # return None if request attempts failed
-    if response == None:
-        return None
-
-sys.stderr = open(os.devnull, 'w')
-
-# Ask question to llama
-model_path = "models/llama-2-7b.Q4_K_M.gguf"
-
-question = input('Write a question: ')
-llm = Llama(model_path=model_path, verbose=False)
-output = llm(
-      question, # Prompt
-      max_tokens=64,
-      # stop = ['Q:', '?']
-      # stop=["Q:", "\n"], # Stop generating just before the model would generate a new question
-      # echo=True # Echo the prompt back in the output
-)
-print('\033[1m' + "Input (A):", question, "\n" + '\033[0m')
-answer = output['choices'][0]['text']
-print('\033[1m' + "Text returned by the language model (B) (llama 2, 70B):"  + '\033[0m', output['choices'][0]['text']) 
-
-
-answer_tokens = preprocess(answer)
-disctinct_tokens = []
-entities = [] # we assume entities are nouns and proper nouns | Tags: NN, NNS, NNP, NNPS
-
-for token in answer_tokens:
-      if token not in disctinct_tokens:
-            disctinct_tokens.append(token)
-            if token[1] == 'NN' or token[1] == 'NNS': # get nouns |NN, NNS tags are for nours such as objects
-                  entities.append(token)
-            if token[1] == 'NNP' or token[1] == 'NNPS': # get proper nouns | NNP, NNPS tags are usually for people, countries, cities, offices etc
-                  entities.append(token)
-
-question_tokens = preprocess(question)
-
-for token in question_tokens:
-      if token not in disctinct_tokens:
-            disctinct_tokens.append(token)
-            if token[1] == 'NN' or token[1] == 'NNS': # get nouns |NN, NNS tags are for nours such as objects
-                  entities.append(token)
-            if token[1] == 'NNP' or token[1] == 'NNPS': # get proper nouns | NNP, NNPS tags are usually for people, countries, cities, offices etc
-                  entities.append(token)
-
-
-wikipedia_entities = []
-for entity in entities:
-    wiki_link = f"https://en.wikipedia.org/wiki/{entity[0]}"
-    if attempt_request(wiki_link):
-         wikipedia_entities.append(entity)
-
-
-print('\033[1m' + "Entities extracted:\n" + '\033[0m')
-for wikipedia_entitiy in wikipedia_entities:
-      wiki_link = f"https://en.wikipedia.org/wiki/{wikipedia_entitiy[0]}"
-
-      print(wikipedia_entitiy[0], "     ", wiki_link, "\n")
+    process_questions_from_file('input.txt', 'output_file')
