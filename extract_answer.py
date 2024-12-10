@@ -24,6 +24,7 @@ def determine_question_type(question):
     return 'entity' if wh_pronouns else 'y/n'
 
 def extract_entity_answer(question, answer):
+    print('extract_entity_answer is called')
     """Extracts the probable entity answer from the LLM response."""
     probable_answers = []
     answer_entities = [(ent.text, ent.label_, token.pos_) 
@@ -32,9 +33,13 @@ def extract_entity_answer(question, answer):
                          for ent in nlp(question).ents]
     question_entity_texts = [text for text, label in question_entities]
     question_entity_labels = [label for text, label in question_entities]
-
+    #print(answer_entities)
     for entity_text, entity_label, pos in answer_entities:
-        if entity_text not in question_entity_texts and entity_label in question_entity_labels and entity_text not in probable_answers:
+        # Assumption: An entity is the answer if it doesn't exist in the question and if its label is also a label an entity in the question. 
+        # I also want to map LOC with GPE
+        if entity_text not in question_entity_texts and (entity_label in question_entity_labels or \
+                                                         (entity_label in ('GPE', 'LOC') and any(l in ('GPE', 'LOC') for l in question_entity_labels))) and \
+                                                            entity_text not in probable_answers:            
             probable_answers.append(entity_text)  # Add only the text
 
     return probable_answers
@@ -43,6 +48,9 @@ def extract_yes_or_no(question, answer):
     """Extracts a yes/no answer from the LLM response."""
     if any(phrase in answer.lower() for phrase in ["the answer is no", "no, it is not", "obviously not"]): # Check for hand build patterns
         return 'No'
+    
+    if any(phrase in answer.lower() for phrase in ["yes,"]): # Check for hand build patterns
+        return 'Yes'
 
     answer_entities = [ent.text for ent in nlp(answer).ents]
     question_entities = [ent.text for ent in nlp(question).ents]
@@ -83,8 +91,13 @@ def find_entity_pairs(text):
         for j in range(i + 1, len(entities)):  # Iterate through remaining entities
             if entities[i] not in [p[0] for p in pairs] and entities[i] not in [p[1] for p in pairs] and \
                entities[j] not in [p[0] for p in pairs] and entities[j] not in [p[1] for p in pairs]:
-                    pairs.append((entities[i], entities[j])) # Create pairs
-                    break 
+                # Check distance between entities
+                start_i = text.index(entities[i]) + len(entities[i])
+                start_j = text.index(entities[j])
+                words_between = len(text[start_i:start_j].split())
+                if words_between <= 5:
+                    pairs.append((entities[i], entities[j]))  # Create pairs
+                    break  # Move to the next entity
     return pairs
 
 def extract_answer(question, answer):
