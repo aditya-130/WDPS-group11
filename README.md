@@ -4,7 +4,7 @@ Python program to process language model outputs, extract answers and validate t
 Mount project to docker image:
 
 ```jsx
-docker run -ti -v /Users/aksharabruno/WDPS:/workspace karmaresearch/wdps2
+docker run -ti -v <path_to_project_folder>:/workspace karmaresearch/wdps2
 ```
 
 Go to workspace:
