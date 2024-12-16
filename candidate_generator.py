@@ -28,10 +28,6 @@ def get_yago_entity_candidates(entity):
     entities.append(entity_data)
   return entities
 
-# Example usage with a parameter:
-entity_to_search = "Athens"
-entities_data = get_yago_entity_candidates(entity_to_search)
-
 
 def get_wikidata_entity_candidates(entity):
     """
@@ -101,11 +97,3 @@ def get_wikidata_entity_candidates(entity):
         entities.append(entity_data)
 
     return entities
-
-# Example usage with a parameter:
-entity_to_search = "Athens"
-entities_data = get_yago_entity_candidates(entity_to_search)
-entities_data = get_wikidata_entity_candidates(entity_to_search)
-
-
-
