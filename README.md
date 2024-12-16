@@ -11,7 +11,7 @@ docker run -ti -v <path_to_project_folder>:/workspace karmaresearch/wdps2
 Go to workspace:
 
 ```jsx
-cd / workspace / WDPS - group11;
+cd /workspace/WDPS-group11;
 ```
 
 Install requirements:
