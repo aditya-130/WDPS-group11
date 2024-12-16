@@ -1,3 +1,5 @@
 llama-cpp-python
 spacy
 requests
+sparqlwrapper
+nltk
