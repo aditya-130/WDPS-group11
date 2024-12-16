@@ -34,5 +34,5 @@ python -m spacy download en_core_web_sm
 python -m spacy download en_core_web_lg
 python -m spacy download en_core_web_md
 python -m nltk.downloader punkt_tab
-python -m nltk.downloader averaged_perceptron_tagger
+python -m nltk.downloader averaged_perceptron_tagger_eng
 ```
