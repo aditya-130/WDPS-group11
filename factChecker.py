@@ -1,20 +1,14 @@
-# Dependencies
-# !pip install sparqlwrapper
-# !python -m spacy download en_core_web_md
-
-
 from SPARQLWrapper import SPARQLWrapper, JSON
 import spacy
 import re
-#nlp = spacy.load("en_core_web_sm")
-nlp = spacy.load("en_core_web_md")
-
 from sentence_transformers import SentenceTransformer, util
-
 import gensim.downloader as api
 from numpy import dot
 from numpy.linalg import norm
 import requests
+from get_question_type import determine_question_type
+
+nlp = spacy.load("en_core_web_md")
 
 # Load pretrained Word2Vec model
 word2vecModel = api.load("glove-wiki-gigaword-100")
@@ -45,10 +39,7 @@ def polarToDeclarative(text): #Handles do- questions unintendedly
 
 def contentReplacer(entity, question):
   result = question
-  print(result)
   result = re.sub(r'\b(who|what|when|where|why)\b', entity, question, flags=re.IGNORECASE)
-  print(result)
-  print("RETURN")
   return result
 
 def relationTriplets(doc):
@@ -74,8 +65,6 @@ def relationTriplets(doc):
           [child.text for child in obj.subtree]
         )  # Include all tokens in the object's subtree
         object_entities.append(compound_obj)
-      #print(subject_entities)
-      #print(object_entities)
       # Create triplets
       for sbj_entity in subject_entities:
         for obj_entity in object_entities:
@@ -86,7 +75,6 @@ def relationTriplets(doc):
     return None
   save = []
   for entry in range(len(triplets[0])):
-    #print(triplets[0][entry])
     save.append(re.sub(r'^(a|an|the)\s+', '', triplets[0][entry], flags=re.IGNORECASE))
   return (save[0], save[1], save[2])
   #return triplets
@@ -138,23 +126,30 @@ def relBetweenTwo(sbj, obj):
   results = sparql.query().convert()
 
   # Output results
-  #print(f"Relationships between {URLtoText(sbj).capitalize()} and {URLtoText(obj).capitalize()}:")
   returnRes = []
   for result in results["results"]["bindings"]:
-    #print(f"Property: {result['property']['value']}")
     returnRes.append(result['property']['value'])
   return returnRes
 
 
-  for result in results["results"]["bindings"]:
+  """for result in results["results"]["bindings"]:
     relString = f"{URLtoText(sbj)} {URLtoText(result['property']['value'])} {URLtoText(obj)}"
     print("QUERY IS: ", queryString)
     print("RELATION IS: ", relString)
-    print(similarity(relString, queryString))
+    print(similarity(relString, queryString))"""
 
 
 def isCamelCase(string):
   return bool(re.match(r'^[a-z]+([A-Z][a-z]*)*$', string))
+
+def wikipediaToYago(wikipedia_url):
+  #Wikipedia to Yago (for relation purposes)
+  yago_url = wikipedia_url.replace("en.wikipedia.org/wiki", "yago-knowledge.org/resource")
+  response = requests.get(yago_url)
+  if response.status_code == 200:
+    return yago_url
+  else:
+    return None
 
 def yagoToDBPedia(yago_url):
   #So DBPedia has a more detailed abstract, Yago has a very very very simple one. Therefore as a last resort, we move do DBPedia to compare facts
@@ -188,7 +183,6 @@ def checkQuery(sbj, obj, text): #Query vs Relation sentence-level matching
     return None
   for rel in rels:
     tempTriplet = URLtoText(sbj), URLtoText(rel), URLtoText(obj)
-    #print(tripletsToSentence(tempTriplet))
     if betterSim(text, tripletsToSentence(tempTriplet)) > 0.90:
       return "correct"
   else:
@@ -201,11 +195,8 @@ def checkSynonyms(sbj, obj, extractedRelation): #Relation vs Relation word-level
     words = [st]
     if isCamelCase(st):
       words = noMoreCamels(st).split()
-      #print(words)
     for word in words:
-      #print(f"Comparing {lemmatise(extractedRelation)} and {lemmatise(word)}")
       if synonyms(lemmatise(extractedRelation), lemmatise(word)):
-        #print(f"{extractedRelation} and {word} are synonyms")
         return True
   return False
 
@@ -227,7 +218,6 @@ def compareAbstract(sbj, obj, text): #Sentence to Paragraph level matching
 def betterSim(sentence1, sentence2): #Sentence level similarity
   embedding1 = sentenceTransformerModel.encode(sentence1, convert_to_tensor=True)
   embedding2 = sentenceTransformerModel.encode(sentence2, convert_to_tensor=True)
-  #print(util.cos_sim(embedding1, embedding2))
   return util.cos_sim(embedding1, embedding2)
 
 def cosine_similarity(vec1, vec2):
@@ -238,7 +228,6 @@ def synonyms(word1, word2):
   vector2 = word2vecModel[word2]
   similarity = cosine_similarity(vector1, vector2)
   threshold = 0.5
-  #print(similarity)
   if similarity >= threshold:
     return True
   else:
@@ -276,82 +265,42 @@ def lemmatise(word):
 def factCheckPipeline(sbj, obj, text):
   if extractRelation(text): #Determine if the relation is parsable
     if checkSynonyms(sbj, obj, extractRelation(text)): #If possible, and exists a relation between the two objects, then check if synonym
-      print("correct")
-      return True
+      return "correct"
     else:
-      print("incorrect")
-      return False
+      return "incorrect"
   else: #If relation cannot be parsed, then just check similarity between queries
     t2 = checkQuery(sbj, obj, text) #Restructures query and relation, then compares similarity between two sentences
 
     if t2: #Can return None, when middle fails
       if t2 == "correct":
-        print("correct")
-        return True
+        return "correct"
       else:
-        print("incorrect")
-        return False
+        return "incorrect"
   #If we arrive here, the relation cannot be parsed with our functions
   #and the relationship does not exist in graph (incomplete knowledge)
   #Therefore we just compare the query to the wikipedia page
   t3 = compareAbstract(sbj, obj, text)
   if t3:
     if t3 == "correct":
-      print("correct")
-      return True
+      return "correct"
     else:
-      print("incorrect")
-      return False
+      return "incorrect"
   else:
-    print("incorrect")
-    return False
+    return "incorrect"
 
-#TEST 1
+def verifyAnswer(question, entity, extractedEntities):
+  max_entity = max(extractedEntities['question_entities'], key=lambda x: x[2])
+  subj = max_entity[1]
 
-text = "Seoul is the capital of South Korea"
-sbj = "http://yago-knowledge.org/resource/Seoul"
-obj = "http://yago-knowledge.org/resource/South_Korea"
+  max_entity = max(extractedEntities['answer_entities'], key=lambda x: x[2])
+  obj = max_entity[1]
 
+  if (determine_question_type(question) == 'entity'):
+    text = contentReplacer(entity,question)
+  else:
+    text = polarToDeclarative(question)
 
-a = factCheckPipeline(sbj, obj, text)
+  subj = wikipediaToYago(subj)
+  obj = wikipediaToYago(obj)
 
-text = "Busan is the capital of South Korea"
-sbj = "http://yago-knowledge.org/resource/Busan"
-obj = "http://yago-knowledge.org/resource/South_Korea"
-
-
-a = factCheckPipeline(sbj, obj, text)
-
-#TEST 2
-
-text = "Shakespeare wrote Romeo and Juliet"
-sbj = "http://yago-knowledge.org/resource/William_Shakespeare"
-obj = "http://yago-knowledge.org/resource/Romeo_and_Juliet"
-
-a = factCheckPipeline(sbj, obj, text)
-
-text = "Shakespeare wrote War and Peace"
-sbj = "http://yago-knowledge.org/resource/William_Shakespeare"
-obj = "http://yago-knowledge.org/resource/War_and_Peace"
-
-a = factCheckPipeline(sbj, obj, text)
-
-text = "Tolstoy wrote Romeo and Juliet"
-sbj = "http://yago-knowledge.org/resource/Leo_Tolstoy"
-obj = "http://yago-knowledge.org/resource/Romeo_and_Juliet"
-
-a = factCheckPipeline(sbj, obj, text)
-
-#TEST 3
-
-text = "Joe Biden is President of the United States"
-sbj = "http://yago-knowledge.org/resource/Joe_Biden"
-obj = "http://yago-knowledge.org/resource/United_States"
-
-a = factCheckPipeline(sbj, obj, text)
-
-text = "Elon Musk is President of the United States"
-sbj = "http://yago-knowledge.org/resource/Joe_Biden"
-obj = "http://yago-knowledge.org/resource/United_States"
-
-a = factCheckPipeline(sbj, obj, text)
+  return factCheckPipeline(subj,obj,text)

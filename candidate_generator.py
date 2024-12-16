@@ -28,7 +28,6 @@ def get_yago_entity_candidates(entity):
     entities.append(entity_data)
   return entities
 
-
 def get_wikidata_entity_candidates(entity):
     """
     Queries Wikidata for an entity string, returning a list of candidate dictionaries:
