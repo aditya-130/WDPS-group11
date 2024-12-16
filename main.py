@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     file1 = open("output.txt","w")
 
-    with open("input.txt", "r") as file2:
+    with open("input.txt", "r") as file2:   #change file name if needed
         for line in file2:
 
             question_id = "".join(line.split(" ")[0])
