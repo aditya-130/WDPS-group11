@@ -24,7 +24,7 @@ def extract_entity_answer(question, answer):
     return probable_answers
 
 def extract_yes_or_no(question, answer):
-    """Extracts a yes/no answer from the LLM response."""
+    #Extracts a yes/no answer from the LLM response
     if any(phrase in answer.lower() for phrase in ["the answer is no", "no, it is not", "obviously not"]): # Check for hand build patterns
         return 'No'
     
@@ -51,7 +51,7 @@ def extract_yes_or_no(question, answer):
     
 
 def check_negation(entity, text):
-    """Checks if an entity is negated in the given text."""
+    #Checks if an entity is negated in the given text
     doc = nlp(text)
     negation_cues = ["not", "no", "never", "n't", "without"]
     entity_span = doc.char_span(text.index(entity), text.index(entity) + len(entity))
@@ -62,7 +62,7 @@ def check_negation(entity, text):
     return False
 
 def find_entity_pairs(text):
-    """Finds pairs of entities in the text."""
+    #Finds pairs of entities in the text
     doc = nlp(text)  # Process the text with spaCy
     entities = [ent.text for ent in doc.ents]  # Extract all entities
     pairs = []
@@ -80,7 +80,7 @@ def find_entity_pairs(text):
     return pairs
 
 def extract_answer(question, answer):
-    """Extracts the answer based on the question type."""
+    #Extracts the answer based on the question type
     question_type = determine_question_type(question)
     print('Question type:', question_type)
     if question_type == 'entity':
