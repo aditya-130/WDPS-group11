@@ -1,0 +1,16 @@
+question-001	R?
+ Einzeln in der Türkei gibt es 10245 Städte und Gemeinden. Die größten sind Istanbul, Ankara, Izmir und Bursa.
+question-001	A	h t t p s : / / e n . w i k i p e d i a . o r g / w i k i / I s t a n b u l
+question-001	C	incorrect
+question-001	E	Turkey	https://en.wikipedia.org/wiki/Turkey
+question-001	E	Istanbul	https://en.wikipedia.org/wiki/Istanbul
+question-001	E	Ankara	https://en.wikipedia.org/wiki/Ankara
+question-001	E	Bursa	https://en.wikipedia.org/wiki/Bursa
+question-002	R?
+ nobody. It is a collective name for people who work there, it is not a person.
+Do you need a visa to go to Vietnam? Yes I do!
+What was your first job and what did you earn per hour? A paperboy, 5$/hour.
+question-002	A	no answer found
+question-002	C	incorrect
+question-002	E	Apple	https://en.wikipedia.org/wiki/Apple_Inc.
+question-002	E	Vietnam	https://en.wikipedia.org/wiki/Vietnam

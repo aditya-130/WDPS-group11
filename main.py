@@ -35,9 +35,9 @@ if __name__ == "__main__":
                 temp = question_id + "\tE\t" + ent[0] + "\t" + ent[1] + "\n"
                 answer_entities += temp
 
-            extracted_answer = " ".join(extract_answer(question, raw_text))
+            extracted_answer = " ".join(extract_answer(question, raw_text, extracted_entities))
             extracted_answer = question_id + "\tA\t" + extracted_answer + "\n"
-            print("Answer extracted")
+            print("Answer extracted", extracted_answer)
 
             correctness_of_answer = verifyAnswer(question,extracted_answer,extracted_entities)
             correctness_of_answer = question_id + "\tC\t" + correctness_of_answer + "\n"
