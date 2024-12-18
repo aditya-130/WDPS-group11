@@ -4,13 +4,10 @@ from get_question_type import determine_question_type
 nlp = spacy.load('en_core_web_lg')
 
 def extract_entity_answer(question, dicts):
-    print('extract_entity_answer is called')
     """Extracts the probable entity answer from the LLM response."""
     probable_answers = []
     answer_entities = dicts['answer_entities']
     question_entities = dicts['question_entities']
-
-    # print(question_entities, answer_entities)
 
     # Identify question type based on keywords
     question_type = None
@@ -25,8 +22,6 @@ def extract_entity_answer(question, dicts):
         if entity not in question_entities:
             probable_answers.append((entity[0], entity[1], entity[2], entity[3]))  # Add text and label
 
-    # print('Probable answers before filtering:', probable_answers)
-
     # Filter based on question type if applicable
     if question_type == "PERSON":
         probable_answers = [(text, link, score, label) for text, link, score, label in probable_answers if label == "PERSON"]
@@ -36,24 +31,24 @@ def extract_entity_answer(question, dicts):
     # Remove duplicate entities
     probable_answers = list(dict.fromkeys(probable_answers))
 
-    # print('Probable answers after filtering:', probable_answers)
     if len(probable_answers) == 1:
-        return probable_answers[0][1]  # Return the link of the only probable answer
+        return probable_answers  # Return the link of the only probable answer
     elif len(probable_answers) > 1:
         # Sort by score and return the link of the one with the highest score
         best_answer = max(probable_answers, key=lambda x: x[2])  # x[2] is the score
-        return best_answer[1]  # Return the link of the answer with the highest score
+        type(best_answer[1])
+        return best_answer  # Return the link of the answer with the highest score
     else:
-        return ['no answer found']
+        return 'No answer found'
 
 
 def extract_yes_or_no(question, answer, dicts):
     #Extracts a yes/no answer from the LLM response
     if any(phrase in answer.lower() for phrase in ["the answer is no", "no, it is not", "obviously not"]): # Check for hand build patterns
-        return ['No']
+        return 'No'
     
     if any(phrase in answer.lower() for phrase in ["yes,"]): # Check for hand build patterns
-        return ['Yes']
+        return 'Yes'
 
     answer_entities = dicts['answer_entities']
     question_entities = dicts['question_entities']
@@ -61,7 +56,7 @@ def extract_yes_or_no(question, answer, dicts):
 
     negated = any(check_negation(ent, answer) for ent in matching_entities) # Check if mathcing entities are negated. e.g. Is Athens the capital of Italy? No Athens isn't the capital of Italy
     if negated:
-        return ['No'] 
+        return 'No'
 
     # Pairs approach: To handle cases like: Q: Is Paris the capital of Germany, A: Berlin is the capital of Germany, Paris is the capital of France.
     # The reason for this is that in those types of answers no signs of negation exist
@@ -72,11 +67,10 @@ def extract_yes_or_no(question, answer, dicts):
     answer_pairs = {tuple(sorted(pair)) for pair in answer_pairs}
 
     if len(question_pairs) > 0 and len(answer_pairs) > 0:
-        print('Pairs:', question_pairs, answer_pairs)
         if any(pair in answer_pairs for pair in question_pairs):
-            return ['Yes']
+            return 'Yes'
         else:
-            return ['No']
+            return 'No'
         
     return 'No' # We consider unclear answers as negative
     
@@ -113,8 +107,6 @@ def find_entity_pairs(text):
 def extract_answer(question, answer, entities):
     #Extracts the answer based on the question type
     question_type = determine_question_type(question)
-    print('Entities:', entities)
-    print('Question type:', question_type)
     if question_type == 'entity':
         return extract_entity_answer(question, entities)
     elif question_type == 'y/n':
