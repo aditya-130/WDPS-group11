@@ -70,24 +70,24 @@ def add_candidates(entities_list):
     return entities_list
 
 def get_entities(question,answer):
+    entities = {'question_entities':[],'answer_entities':[]}
+    
     question_entities = extract_entities(question)
     question_entities = add_candidates(question_entities)
     disambiguated_questions = disambiguate_entities(question_entities, weight=5)
 
-    entities = {'question_entities':[],'answer_entities':[]}
-
     for ent in disambiguated_questions:
         if (ent['best_candidate'] and ent['best_candidate']['article']):
-            temp = [ent['text'],ent['best_candidate']['article'],ent['best_score']]
+            temp = [ent['text'],ent['best_candidate']['article'],ent['best_score'],ent['label']]
             entities['question_entities'].append(temp)
-
+    
     answer_entities = extract_entities(answer)
     answer_entities = add_candidates(answer_entities)
     disambiguated_answers = disambiguate_entities(answer_entities, weight=5)
 
     for ent in disambiguated_answers:
         if (ent['best_candidate'] and ent['best_candidate']['article']):
-            temp = [ent['text'],ent['best_candidate']['article'],ent['best_score']]
+            temp = [ent['text'],ent['best_candidate']['article'],ent['best_score'],ent['label']]
             entities['answer_entities'].append(temp)
-
+    
     return entities
