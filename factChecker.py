@@ -295,6 +295,7 @@ def factCheckPipeline(sbj, obj, text):
     return False
 
 def verifyAnswer(question, entity, extractedEntities):
+  polar = False
   max_entity = max(extractedEntities['question_entities'], key=lambda x: x[2])
   subj = max_entity[1]
 
@@ -305,8 +306,23 @@ def verifyAnswer(question, entity, extractedEntities):
     text = contentReplacer(entity,question)
   else:
     text = polarToDeclarative(question)
+    polar = True
 
   subj = wikipediaToYago(subj)
   obj = wikipediaToYago(obj)
 
-  return factCheckPipeline(subj,obj,text)
+  if polar:
+    ans = factCheckPipeline(subj,obj,text)
+    if ans and entity == 'Yes':
+      return "correct"
+    elif not ans and entity == 'No':
+      return "correct"
+    else:
+      return "incorrect"
+  else:
+    ans = factCheckPipeline(subj,obj,text)
+    if ans:
+      return "correct"
+    else:
+      return "incorrect"
+
