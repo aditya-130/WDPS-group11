@@ -17,8 +17,7 @@ sentenceTransformerModel = SentenceTransformer('all-MiniLM-L6-v2')
 
 def polarToDeclarative(text): #Handles do- questions unintendedly
   #Uses the fact that polar questions in english are often created through a subject-auxiliary inversion
-  #At a very basic level, that means that we can put the auxiliary verb after the subject to turn it into a declaration
-  #To make it more robust, we could construct a syntax tree and put the auxiliary in the right place,
+  #That means that we can put the auxiliary verb after the subject to turn it into a declaration
   doc = nlp(text)
   subject = None
   auxilliary = None
