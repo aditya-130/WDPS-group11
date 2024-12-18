@@ -11,7 +11,7 @@ docker run -ti -v <path_to_project_folder>:/workspace karmaresearch/wdps2
 Go to workspace:
 
 ```jsx
-cd /workspace/WDPS - group11
+cd /workspace/WDPS-group11;
 ```
 
 Install requirements:
@@ -35,4 +35,10 @@ python -m spacy download en_core_web_lg
 python -m spacy download en_core_web_md
 python -m nltk.downloader punkt_tab
 python -m nltk.downloader averaged_perceptron_tagger_eng
+```
+
+Ensure adding input.txt to this folder before running this application. In case of a different file name, it can be renamed in main.py (line 13). To run this application, run main.py. Output will be generated in output.txt.
+
+```jsx
+python main.py
 ```

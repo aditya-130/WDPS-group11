@@ -1,6 +1,6 @@
 #TEST 1
 
-from fact_checker import factCheckPipeline
+from factChecker import factCheckPipeline
 
 
 text = "Seoul is the capital of South Korea"
