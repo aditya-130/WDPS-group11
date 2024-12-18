@@ -25,6 +25,7 @@ def polarToDeclarative(text): #Handles do- questions unintendedly
   #Uses the fact that polar questions in english are often created through a subject-auxiliary inversion
   #At a very basic level, that means that we can put the auxiliary verb after the subject to turn it into a declaration
   #To make it more robust, we could construct a syntax tree and put the auxiliary in the right place,
+  #(rant) but spacy doesn't seem to make syntax trees like a linguistics textbook so I have absolutely no idea if that is even possible
   doc = nlp(text)
   subject = None
   auxilliary = None
@@ -275,20 +276,20 @@ def lemmatise(word):
 def factCheckPipeline(sbj, obj, text):
   if extractRelation(text): #Determine if the relation is parsable
     if checkSynonyms(sbj, obj, extractRelation(text)): #If possible, and exists a relation between the two objects, then check if synonym
-      #print("correct")
+      print("correct")
       return True
     else:
-      #print("incorrect")
+      print("incorrect")
       return False
   else: #If relation cannot be parsed, then just check similarity between queries
     t2 = checkQuery(sbj, obj, text) #Restructures query and relation, then compares similarity between two sentences
 
     if t2: #Can return None, when middle fails
       if t2 == "correct":
-        #print("correct")
+        print("correct")
         return True
       else:
-        #print("incorrect")
+        print("incorrect")
         return False
   #If we arrive here, the relation cannot be parsed with our functions
   #and the relationship does not exist in graph (incomplete knowledge)
@@ -296,13 +297,13 @@ def factCheckPipeline(sbj, obj, text):
   t3 = compareAbstract(sbj, obj, text)
   if t3:
     if t3 == "correct":
-      #print("correct")
+      print("correct")
       return True
     else:
-      #print("incorrect")
+      print("incorrect")
       return False
   else:
-    #print("incorrect")
+    print("incorrect")
     return False
 
 #TEST 1
