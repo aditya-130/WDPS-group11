@@ -19,7 +19,6 @@ def polarToDeclarative(text): #Handles do- questions unintendedly
   #Uses the fact that polar questions in english are often created through a subject-auxiliary inversion
   #At a very basic level, that means that we can put the auxiliary verb after the subject to turn it into a declaration
   #To make it more robust, we could construct a syntax tree and put the auxiliary in the right place,
-  #(rant) but spacy doesn't seem to make syntax trees like a linguistics textbook so I have absolutely no idea if that is even possible
   doc = nlp(text)
   subject = None
   auxilliary = None
@@ -32,9 +31,9 @@ def polarToDeclarative(text): #Handles do- questions unintendedly
     else:
       other.append(token) #Put other words in order
   if subject and auxilliary:
-    print(auxilliary)
+    #print(auxilliary)
     declarative = f"{subject.capitalize()} {auxilliary.lower()} " + " ".join([token.text for token in other])
-    print(declarative)
+    #print(declarative)
     return declarative.rstrip("?")
 
 def contentReplacer(entity, question):
@@ -71,7 +70,7 @@ def relationTriplets(doc):
            triplets.append((sbj_entity, rel, obj_entity))
 
   if not triplets:
-    print("NO RELATION FOUND")
+    #print("NO RELATION FOUND")
     return None
   save = []
   for entry in range(len(triplets[0])):
@@ -265,28 +264,35 @@ def lemmatise(word):
 def factCheckPipeline(sbj, obj, text):
   if extractRelation(text): #Determine if the relation is parsable
     if checkSynonyms(sbj, obj, extractRelation(text)): #If possible, and exists a relation between the two objects, then check if synonym
-      return "correct"
+      #return "correct"
+      return True
     else:
-      return "incorrect"
+      #return "incorrect"
+      return False
   else: #If relation cannot be parsed, then just check similarity between queries
     t2 = checkQuery(sbj, obj, text) #Restructures query and relation, then compares similarity between two sentences
 
     if t2: #Can return None, when middle fails
       if t2 == "correct":
-        return "correct"
+        #return "correct"
+        return True
       else:
-        return "incorrect"
+        #return "incorrect"
+        return False
   #If we arrive here, the relation cannot be parsed with our functions
   #and the relationship does not exist in graph (incomplete knowledge)
   #Therefore we just compare the query to the wikipedia page
   t3 = compareAbstract(sbj, obj, text)
   if t3:
     if t3 == "correct":
-      return "correct"
+      #return "correct"
+      return True
     else:
-      return "incorrect"
+      #return "incorrect"
+      return False
   else:
-    return "incorrect"
+    #return "incorrect"
+    return False
 
 def verifyAnswer(question, entity, extractedEntities):
   max_entity = max(extractedEntities['question_entities'], key=lambda x: x[2])
