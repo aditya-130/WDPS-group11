@@ -30,9 +30,7 @@ def polarToDeclarative(text): #Handles do- questions unintendedly
     else:
       other.append(token) #Put other words in order
   if subject and auxilliary:
-    #print(auxilliary)
     declarative = f"{subject.capitalize()} {auxilliary.lower()} " + " ".join([token.text for token in other])
-    #print(declarative)
     return declarative.rstrip("?")
 
 def contentReplacer(entity, question):
@@ -69,7 +67,6 @@ def relationTriplets(doc):
            triplets.append((sbj_entity, rel, obj_entity))
 
   if not triplets:
-    #print("NO RELATION FOUND")
     return None
   save = []
   for entry in range(len(triplets[0])):
@@ -295,33 +292,39 @@ def factCheckPipeline(sbj, obj, text):
 
 def verifyAnswer(question, entity, extractedEntities):
   polar = False
-  max_entity = max(extractedEntities['question_entities'], key=lambda x: x[2])
-  subj = max_entity[1]
 
-  max_entity = max(extractedEntities['answer_entities'], key=lambda x: x[2])
-  obj = max_entity[1]
+  if entity == 'no answer found':
+    return "cannot check"
+  
+  if extractedEntities['question_entities'] and extractedEntities['answer_entities']:
+    max_entity = max(extractedEntities['question_entities'], key=lambda x: x[2])
+    subj = max_entity[1]
 
-  if (determine_question_type(question) == 'entity'):
-    text = contentReplacer(entity,question)
-  else:
-    text = polarToDeclarative(question)
-    polar = True
+    max_entity = max(extractedEntities['answer_entities'], key=lambda x: x[2])
+    obj = max_entity[1]
 
-  subj = wikipediaToYago(subj)
-  obj = wikipediaToYago(obj)
-
-  if polar:
-    ans = factCheckPipeline(subj,obj,text)
-    if ans and entity == 'Yes':
-      return "correct"
-    elif not ans and entity == 'No':
-      return "correct"
+    if (determine_question_type(question) == 'entity'):
+      text = contentReplacer(entity,question)
     else:
-      return "incorrect"
-  else:
-    ans = factCheckPipeline(subj,obj,text)
-    if ans:
-      return "correct"
-    else:
-      return "incorrect"
+      text = polarToDeclarative(question)
+      polar = True
 
+    subj = wikipediaToYago(subj)
+    obj = wikipediaToYago(obj)
+
+    if polar:
+      ans = factCheckPipeline(subj,obj,text)
+      if ans and entity == 'Yes':
+        return "correct"
+      elif not ans and entity == 'No':
+        return "correct"
+      else:
+        return "incorrect"
+    else:
+      ans = factCheckPipeline(subj,obj,text)
+      if ans:
+        return "correct"
+      else:
+        return "incorrect"
+  else:
+    return "cannot check"

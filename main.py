@@ -2,6 +2,7 @@ from extract_answer import extract_answer
 from entity_linker import get_entities
 from llama_cpp import Llama
 from factChecker import verifyAnswer
+from get_question_type import determine_question_type
 
 model_path = "../../home/user/models/llama-2-7b.Q4_K_M.gguf"
 
@@ -20,32 +21,41 @@ if __name__ == "__main__":
             print(f"Asking the question to Llama model (wait, it can take some time...)")
             output = llm(question, max_tokens=64)
             raw_text = output['choices'][0]['text']
-            raw_text = question_id + "\tR" + raw_text + "\n" 
-            print("Raw text generated")
-
+            print("Raw text generated: ", raw_text)
+            
             extracted_entities = get_entities(question,raw_text)
-            print("Entities extracted successfully")
+            print("Entities extracted" )
+            print("Entities in question: ", extracted_entities["question_entities"])
+            print("Entities in answer: ", extracted_entities["answer_entities"])
+
+            extracted_answer = extract_answer(question, raw_text, extracted_entities)
+            if (extracted_answer in ['Yes','No','No answer found']):
+                answer = extracted_answer
+                print("Answer extracted: ", answer)
+                extracted_answer = question_id + "\tA\t" + extracted_answer + "\n"
+            else:
+                answer = extracted_answer[0]
+                print("Answer extracted: ", extracted_answer[0], extracted_answer[1])
+                extracted_answer = question_id + "\tA\t" + extracted_answer[1] + "\n"
+                
+            correctness_of_answer = verifyAnswer(question,answer,extracted_entities)
+            print("Check correctness: ", correctness_of_answer)
+            
+            raw_text = question_id + "\tR" + raw_text + "\n"
+            correctness_of_answer = question_id + "\tC\t" + correctness_of_answer + "\n"
+
             question_entities = ""
             for ent in extracted_entities['question_entities']:
                 temp = question_id + "\tE\t" + ent[0] + "\t" + ent[1] + "\n"
                 question_entities += temp
-
+            
             answer_entities = ""
             for ent in extracted_entities['answer_entities']:
                 temp = question_id + "\tE\t" + ent[0] + "\t" + ent[1] + "\n"
                 answer_entities += temp
 
-            extracted_answer = " ".join(extract_answer(question, raw_text))
-            extracted_answer = question_id + "\tA\t" + extracted_answer + "\n"
-            print("Answer extracted")
-
-            correctness_of_answer = verifyAnswer(question,extracted_answer,extracted_entities)
-            correctness_of_answer = question_id + "\tC\t" + correctness_of_answer + "\n"
-            print("Correctness checked")
-
             final_output = raw_text + extracted_answer + correctness_of_answer + question_entities + answer_entities 
-            print("Output written to output.txt successfully")
-
             file1.write(final_output)
+            print("Output written to output.txt successfully", "\n")
 
     file1.close()
