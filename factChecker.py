@@ -254,7 +254,7 @@ def lemmatise(word):
 def factCheckPipeline(sbj, obj, text):
   try:
     if extractRelation(text): #Determine if the relation is parsable
-      t1 = checkSynonyms(sbj, obj, extractRelation(text)): #If possible, and exists a relation between the two objects, then check if synonym
+      t1 = checkSynonyms(sbj, obj, extractRelation(text)) #If possible, and exists a relation between the two objects, then check if synonym
       if t1: #Can return None, when no relation in DB 
         if t1 == "correct":
           return True
