@@ -258,37 +258,35 @@ def lemmatise(word):
 
 
 def factCheckPipeline(sbj, obj, text):
-  if extractRelation(text): #Determine if the relation is parsable
-    if checkSynonyms(sbj, obj, extractRelation(text)): #If possible, and exists a relation between the two objects, then check if synonym
-      #return "correct"
-      return True
-    else:
-      #return "incorrect"
-      return False
-  else: #If relation cannot be parsed, then just check similarity between queries
-    t2 = checkQuery(sbj, obj, text) #Restructures query and relation, then compares similarity between two sentences
-
-    if t2: #Can return None, when middle fails
-      if t2 == "correct":
-        #return "correct"
+  try:
+    if extractRelation(text): #Determine if the relation is parsable
+      t1 = checkSynonyms(sbj, obj, extractRelation(text))
+      if t1: #Can return None, when no relation in DB 
+        if t1 == "correct":
+          return True
+        else:
+          return False
+    else: #If relation cannot be parsed, then just check similarity between queries
+      t2 = checkQuery(sbj, obj, text) #Restructures query and relation, then compares similarity between two sentences
+      if t2: #Can return None, when no relation in DB
+        if t2 == "correct":
+          return True
+        else:
+          return False
+    #If we arrive here, the relation cannot be parsed with our functions
+    #and the relationship does not exist in graph (incomplete knowledge)
+    #Therefore we just compare the query to the wikipedia page
+    t3 = compareAbstract(sbj, obj, text)
+    if t3:
+      if t3 == "correct":
         return True
       else:
-        #return "incorrect"
         return False
-  #If we arrive here, the relation cannot be parsed with our functions
-  #and the relationship does not exist in graph (incomplete knowledge)
-  #Therefore we just compare the query to the wikipedia page
-  t3 = compareAbstract(sbj, obj, text)
-  if t3:
-    if t3 == "correct":
-      #return "correct"
-      return True
     else:
-      #return "incorrect"
       return False
-  else:
-    #return "incorrect"
+  except:
     return False
+
 
 def verifyAnswer(question, entity, extractedEntities):
   polar = False
