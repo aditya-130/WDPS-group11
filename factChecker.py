@@ -254,25 +254,25 @@ def lemmatise(word):
 def factCheckPipeline(sbj, obj, text):
   try:
     if extractRelation(text): #Determine if the relation is parsable
-      t1 = checkSynonyms(sbj, obj, extractRelation(text)) #If possible, and exists a relation between the two objects, then check if synonym
-      if t1: #Can return None, when no relation in DB 
-        if t1 == "correct":
+      answer_1 = checkSynonyms(sbj, obj, extractRelation(text)) #If possible, and exists a relation between the two objects, then check if synonym
+      if answer_1: #Can return None, when no relation in DB 
+        if answer_1 == "correct":
           return True
         else:
           return False
     else: #If relation cannot be parsed, then just check similarity between queries
-      t2 = checkQuery(sbj, obj, text) #Restructures query and relation, then compares similarity between two sentences
-      if t2: #Can return None, when no relation in DB
-        if t2 == "correct":
+      answer_2 = checkQuery(sbj, obj, text) #Restructures query and relation, then compares similarity between two sentences
+      if answer_2: #Can return None, when no relation in DB
+        if answer_2 == "correct":
           return True
         else:
           return False
     #If we arrive here, the relation cannot be parsed with our functions
     #and the relationship does not exist in graph (incomplete knowledge)
     #Therefore we just compare the query to the wikipedia page
-    t3 = compareAbstract(sbj, obj, text)
-    if t3:
-      if t3 == "correct":
+    answer_3 = compareAbstract(sbj, obj, text)
+    if answer_3:
+      if answer_3 == "correct":
         return True
       else:
         return False

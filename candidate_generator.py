@@ -75,11 +75,11 @@ def get_wikidata_entity_candidates(entity):
     entities = []
     for result in results["results"]["bindings"]:
         entity_data = {
-            "entity": result["entity"]["value"],      # Wikidata URI
+            "entity": result["entity"]["value"],
             "article": result.get("article", {}).get("value", None),
             "description": result.get("description", {}).get("value", ""),
             "altLabels": [],
-            "popularity": 0  # default
+            "popularity": 0
         }
 
         # Parse altLabels
@@ -90,9 +90,7 @@ def get_wikidata_entity_candidates(entity):
 
         # Parse sitelinks (popularity)
         if "sitelinkCount" in result and "value" in result["sitelinkCount"]:
-            # It's typically a string like "283" which we can convert to int
             entity_data["popularity"] = int(result["sitelinkCount"]["value"])
-
         entities.append(entity_data)
 
     return entities

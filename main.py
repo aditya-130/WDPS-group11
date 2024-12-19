@@ -9,10 +9,10 @@ model_path = "../../home/user/models/llama-2-7b.Q4_K_M.gguf"
 if __name__ == "__main__":
     llm = Llama(model_path=model_path, verbose=False)
 
-    file1 = open("output.txt","w")
+    output_file = open("output.txt","w")
 
-    with open("input.txt", "r") as file2:   #change file name if needed
-        for line in file2:
+    with open("input.txt", "r") as input_file:   #change file name if needed
+        for line in input_file:
 
             question_id = "".join(line.split(" ")[0])
             question = " ".join(line.split(" ")[1:]).strip()
@@ -55,7 +55,7 @@ if __name__ == "__main__":
                 answer_entities += temp
 
             final_output = raw_text + extracted_answer + correctness_of_answer + question_entities + answer_entities 
-            file1.write(final_output)
+            output_file.write(final_output)
             print("Output written to output.txt successfully", "\n")
 
-    file1.close()
+    output_file.close()
