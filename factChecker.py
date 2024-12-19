@@ -94,61 +94,55 @@ def similarity(phrase1, phrase2):
   return doc1.similarity(doc2)
 
 def relBetweenTwo(sbj, obj):
-  # SPARQL query to get all triples where the entity is the subject or object
-  # Works both ways
-  query = f"""
-  PREFIX yago: <http://yago-knowledge.org/resource/>
-  PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-  PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-  """
+    # SPARQL query to get all triples where the entity is the subject or object
+    # Works both ways
 
-  query = f"""
-  PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-  SELECT ?property ?value
-  WHERE {{
-    {{
-      <{sbj}> ?property <{obj}> .
-    }} UNION {{
-      <{obj}> ?property <{sbj}> .
+    query = f"""
+    PREFIX dbo: <http://dbpedia.org/ontology/>
+    PREFIX dbp: <http://dbpedia.org/property/>
+    PREFIX dbr: <http://dbpedia.org/resource/>
+    
+    SELECT ?property
+    WHERE {{
+      {{
+        <{sbj}> ?property <{obj}> .
+      }} UNION {{
+        <{obj}> ?property <{sbj}> .
+      }}
     }}
-  }}
-  """
-  sparql_endpoint = "https://yago-knowledge.org/sparql/query"
-  sparql = SPARQLWrapper(sparql_endpoint)
-  sparql.setQuery(query)
-  sparql.setReturnFormat(JSON)
+    """
+    sparql_endpoint = "https://dbpedia.org/sparql"
+    sparql = SPARQLWrapper(sparql_endpoint)
+    sparql.setQuery(query)
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()
 
-  results = sparql.query().convert()
+    # Output results
+    #print(f"Relationships between {URLtoText(sbj).capitalize()} and {URLtoText(obj).capitalize()}:")
+    returnRes = []
+    for result in results["results"]["bindings"]:
+        #print(result)
+        #print(f"Property: {result['property']['value']}")
+        returnRes.append(result['property']['value'])
+    return returnRes
 
-  # Output results
-  returnRes = []
-  for result in results["results"]["bindings"]:
-    returnRes.append(result['property']['value'])
-  return returnRes
 
-
-  """for result in results["results"]["bindings"]:
-    relString = f"{URLtoText(sbj)} {URLtoText(result['property']['value'])} {URLtoText(obj)}"
-    print("QUERY IS: ", queryString)
-    print("RELATION IS: ", relString)
-    print(similarity(relString, queryString))"""
 
 
 def isCamelCase(string):
   return bool(re.match(r'^[a-z]+([A-Z][a-z]*)*$', string))
 
-def wikipediaToYago(wikipedia_url):
-  #Wikipedia to Yago (for relation purposes)
-  yago_url = wikipedia_url.replace("en.wikipedia.org/wiki", "yago-knowledge.org/resource")
-  response = requests.get(yago_url)
+def wikipediaToDBPedia(wikipedia_url):
+  #Wikipedia to DBPedia (for relation purposes)
+  dbpd_url = wikipedia_url.replace("en.wikipedia.org/wiki", "dbpedia.org/resource")
+  response = requests.get(dbpd_url)
   if response.status_code == 200:
-    return yago_url
+    return dbpd_url
   else:
     return None
 
 def yagoToDBPedia(yago_url):
-  #So DBPedia has a more detailed abstract, Yago has a very very very simple one. Therefore as a last resort, we move do DBPedia to compare facts
-  dbpedia_url = yago_url.replace("yago-knowledge.org/resource", "dbpedia.org/page")
+  dbpedia_url = yago_url.replace("yago-knowledge.org/resource", "dbpedia.org/resource")
   response = requests.get(dbpedia_url)
   if response.status_code == 200:
     return dbpedia_url
@@ -185,6 +179,8 @@ def checkQuery(sbj, obj, text): #Query vs Relation sentence-level matching
 
 def checkSynonyms(sbj, obj, extractedRelation): #Relation vs Relation word-level matching
   rels = relBetweenTwo(sbj, obj)
+  if rels == None:
+    return "none"
   for rel in rels:
     st = URLtoText(rel)
     words = [st]
@@ -192,12 +188,10 @@ def checkSynonyms(sbj, obj, extractedRelation): #Relation vs Relation word-level
       words = noMoreCamels(st).split()
     for word in words:
       if synonyms(lemmatise(extractedRelation), lemmatise(word)):
-        return True
-  return False
+        return "true"
+  return "false"
 
 def compareAbstract(sbj, obj, text): #Sentence to Paragraph level matching
-  sbj = yagoToDBPedia(sbj)
-  obj = yagoToDBPedia(obj)
   if sbj and obj:
     sbjAbstract = get_dbpedia_abstract(sbj)
     objAbstract = get_dbpedia_abstract(obj)
@@ -222,7 +216,7 @@ def synonyms(word1, word2):
   vector1 = word2vecModel[word1]
   vector2 = word2vecModel[word2]
   similarity = cosine_similarity(vector1, vector2)
-  threshold = 0.5
+  threshold = 0.55
   if similarity >= threshold:
     return True
   else:
@@ -259,21 +253,18 @@ def lemmatise(word):
 
 def factCheckPipeline(sbj, obj, text):
   if extractRelation(text): #Determine if the relation is parsable
-    if checkSynonyms(sbj, obj, extractRelation(text)): #If possible, and exists a relation between the two objects, then check if synonym
-      #return "correct"
+    t1 = checkSynonyms(sbj, obj, extractRelation(text)): #If possible, and exists a relation between the two objects, then check if synonym
+    if t1 == "true":
       return True
-    else:
-      #return "incorrect"
+    elif t1 == "false":
       return False
   else: #If relation cannot be parsed, then just check similarity between queries
     t2 = checkQuery(sbj, obj, text) #Restructures query and relation, then compares similarity between two sentences
 
     if t2: #Can return None, when middle fails
       if t2 == "correct":
-        #return "correct"
         return True
       else:
-        #return "incorrect"
         return False
   #If we arrive here, the relation cannot be parsed with our functions
   #and the relationship does not exist in graph (incomplete knowledge)
@@ -281,13 +272,10 @@ def factCheckPipeline(sbj, obj, text):
   t3 = compareAbstract(sbj, obj, text)
   if t3:
     if t3 == "correct":
-      #return "correct"
       return True
     else:
-      #return "incorrect"
       return False
   else:
-    #return "incorrect"
     return False
 
 def verifyAnswer(question, entity, extractedEntities):
@@ -309,8 +297,8 @@ def verifyAnswer(question, entity, extractedEntities):
       text = polarToDeclarative(question)
       polar = True
 
-    subj = wikipediaToYago(subj)
-    obj = wikipediaToYago(obj)
+    subj = wikipediaToDBPedia(subj)
+    obj = wikipediaToDBPedia(obj)
 
     if polar:
       ans = factCheckPipeline(subj,obj,text)
