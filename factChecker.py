@@ -180,7 +180,7 @@ def checkQuery(sbj, obj, text): #Query vs Relation sentence-level matching
 def checkSynonyms(sbj, obj, extractedRelation): #Relation vs Relation word-level matching
   rels = relBetweenTwo(sbj, obj)
   if rels == None:
-    return "none"
+    return None
   for rel in rels:
     st = URLtoText(rel)
     words = [st]
@@ -188,8 +188,8 @@ def checkSynonyms(sbj, obj, extractedRelation): #Relation vs Relation word-level
       words = noMoreCamels(st).split()
     for word in words:
       if synonyms(lemmatise(extractedRelation), lemmatise(word)):
-        return "true"
-  return "false"
+        return "correct"
+  return "incorrect"
 
 def compareAbstract(sbj, obj, text): #Sentence to Paragraph level matching
   if sbj and obj:
@@ -252,30 +252,33 @@ def lemmatise(word):
 
 
 def factCheckPipeline(sbj, obj, text):
-  if extractRelation(text): #Determine if the relation is parsable
-    t1 = checkSynonyms(sbj, obj, extractRelation(text)): #If possible, and exists a relation between the two objects, then check if synonym
-    if t1 == "true":
-      return True
-    elif t1 == "false":
-      return False
-  else: #If relation cannot be parsed, then just check similarity between queries
-    t2 = checkQuery(sbj, obj, text) #Restructures query and relation, then compares similarity between two sentences
-
-    if t2: #Can return None, when middle fails
-      if t2 == "correct":
+  try:
+    if extractRelation(text): #Determine if the relation is parsable
+      t1 = checkSynonyms(sbj, obj, extractRelation(text)): #If possible, and exists a relation between the two objects, then check if synonym
+      if t1: #Can return None, when no relation in DB 
+        if t1 == "correct":
+          return True
+        else:
+          return False
+    else: #If relation cannot be parsed, then just check similarity between queries
+      t2 = checkQuery(sbj, obj, text) #Restructures query and relation, then compares similarity between two sentences
+      if t2: #Can return None, when no relation in DB
+        if t2 == "correct":
+          return True
+        else:
+          return False
+    #If we arrive here, the relation cannot be parsed with our functions
+    #and the relationship does not exist in graph (incomplete knowledge)
+    #Therefore we just compare the query to the wikipedia page
+    t3 = compareAbstract(sbj, obj, text)
+    if t3:
+      if t3 == "correct":
         return True
       else:
         return False
-  #If we arrive here, the relation cannot be parsed with our functions
-  #and the relationship does not exist in graph (incomplete knowledge)
-  #Therefore we just compare the query to the wikipedia page
-  t3 = compareAbstract(sbj, obj, text)
-  if t3:
-    if t3 == "correct":
-      return True
     else:
       return False
-  else:
+  except:
     return False
 
 def verifyAnswer(question, entity, extractedEntities):
