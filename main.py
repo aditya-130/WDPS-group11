@@ -57,5 +57,6 @@ if __name__ == "__main__":
             final_output = raw_text + extracted_answer + correctness_of_answer + question_entities + answer_entities 
             output_file.write(final_output)
             print("Output written to output.txt successfully", "\n")
+            output_file.flush()
 
     output_file.close()
