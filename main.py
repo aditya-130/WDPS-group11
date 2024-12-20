@@ -35,7 +35,7 @@ if __name__ == "__main__":
                 extracted_answer = question_id + "\tA\t" + extracted_answer + "\n"
             else:
                 answer = extracted_answer[0]
-                print("Answer extracted: ", extracted_answer[0], extracted_answer[1])
+                print("Answer extracted: ", extracted_answer)
                 extracted_answer = question_id + "\tA\t" + extracted_answer[1] + "\n"
                 
             correctness_of_answer = verifyAnswer(question,answer,extracted_entities)
