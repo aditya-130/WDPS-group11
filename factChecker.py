@@ -11,13 +11,14 @@ from get_question_type import determine_question_type
 nlp = spacy.load("en_core_web_md")
 
 # Load pretrained Word2Vec model
-word2vecModel = api.load("glove-wiki-gigaword-100")
+word2vec_model = api.load("glove-wiki-gigaword-100")
 # Load Sentence Transformer Model
-sentenceTransformerModel = SentenceTransformer('all-MiniLM-L6-v2')
+sentence_transformer_model = SentenceTransformer('all-MiniLM-L6-v2')
 
-def polarToDeclarative(text): #Handles do- questions unintendedly
+def polar_to_declarative(text): #Handles do- questions unintendedly
   #Uses the fact that polar questions in english are often created through a subject-auxiliary inversion
   #That means that we can put the auxiliary verb after the subject to turn it into a declaration
+  #Otherwise, make sure the order of the sentence is S V O
   doc = nlp(text)
   subject = None
   auxilliary = None
@@ -33,12 +34,14 @@ def polarToDeclarative(text): #Handles do- questions unintendedly
     declarative = f"{subject.capitalize()} {auxilliary.lower()} " + " ".join([token.text for token in other])
     return declarative.rstrip("?")
 
-def contentReplacer(entity, question):
+def content_replacer(entity, question):
+  #Replaces question words with the appropriate entity
   result = question
   result = re.sub(r'\b(who|what|when|where|why)\b', entity, question, flags=re.IGNORECASE)
   return result
 
-def relationTriplets(doc):
+def relation_triplets(doc):
+  #Get triplets of <s p o>
   triplets = []  # To store all valid triplets
 
   for token in doc:
@@ -74,13 +77,13 @@ def relationTriplets(doc):
   return (save[0], save[1], save[2])
   #return triplets
 
-def tripletsToSentence(triplets):
+def triplets_to_sentence(triplets):
   return " ".join(triplets)
 
 def noMoreCamels(camel): #camelCase is not well processed
   return re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', camel).lower()
 
-def URLtoText(url):
+def URL_to_text(url):
   if ("#" in url):
     val = url.split("#")[-1].replace("_", " ")
   else:
@@ -93,9 +96,8 @@ def similarity(phrase1, phrase2):
   doc2 = nlp(phrase2)
   return doc1.similarity(doc2)
 
-def relBetweenTwo(sbj, obj):
+def relation_between(sbj, obj):
     # SPARQL query to get all triples where the entity is the subject or object
-    # Works both ways
 
     query = f"""
     PREFIX dbo: <http://dbpedia.org/ontology/>
@@ -118,7 +120,7 @@ def relBetweenTwo(sbj, obj):
     results = sparql.query().convert()
 
     # Output results
-    #print(f"Relationships between {URLtoText(sbj).capitalize()} and {URLtoText(obj).capitalize()}:")
+    #print(f"Relationships between {URL_to_text(sbj).capitalize()} and {URL_to_text(obj).capitalize()}:")
     returnRes = []
     for result in results["results"]["bindings"]:
         #print(result)
@@ -130,9 +132,10 @@ def relBetweenTwo(sbj, obj):
 
 
 def isCamelCase(string):
+  #Detect, to later get rid of camels in the URLs of entities when necessary
   return bool(re.match(r'^[a-z]+([A-Z][a-z]*)*$', string))
 
-def wikipediaToDBPedia(wikipedia_url):
+def wikipedia_to_dbpedia(wikipedia_url):
   #Wikipedia to DBPedia (for relation purposes)
   dbpd_url = wikipedia_url.replace("en.wikipedia.org/wiki", "dbpedia.org/resource")
   response = requests.get(dbpd_url)
@@ -141,7 +144,7 @@ def wikipediaToDBPedia(wikipedia_url):
   else:
     return None
 
-def yagoToDBPedia(yago_url):
+def yago_to_dbpedia(yago_url):
   dbpedia_url = yago_url.replace("yago-knowledge.org/resource", "dbpedia.org/resource")
   response = requests.get(dbpedia_url)
   if response.status_code == 200:
@@ -166,23 +169,23 @@ def get_dbpedia_abstract(entity):
     return result["abstract"]["value"]
   return None
 
-def checkQuery(sbj, obj, text): #Query vs Relation sentence-level matching
-  rels = relBetweenTwo(sbj,obj)
+def check_query(sbj, obj, text): #Query vs Relation sentence-level matching
+  rels = relation_between(sbj,obj)
   if not rels:
     return None
   for rel in rels:
-    tempTriplet = URLtoText(sbj), URLtoText(rel), URLtoText(obj)
-    if betterSim(text, tripletsToSentence(tempTriplet)) > 0.90:
+    tempTriplet = URL_to_text(sbj), URL_to_text(rel), URL_to_text(obj)
+    if betterSim(text, triplets_to_sentence(tempTriplet)) > 0.90:
       return "correct"
   else:
     return "incorrect"
 
-def checkSynonyms(sbj, obj, extractedRelation): #Relation vs Relation word-level matching
-  rels = relBetweenTwo(sbj, obj)
+def check_synonyms(sbj, obj, extractedRelation): #Relation vs Relation word-level matching
+  rels = relation_between(sbj, obj)
   if rels == None:
     return None
   for rel in rels:
-    st = URLtoText(rel)
+    st = URL_to_text(rel)
     words = [st]
     if isCamelCase(st):
       words = noMoreCamels(st).split()
@@ -191,7 +194,7 @@ def checkSynonyms(sbj, obj, extractedRelation): #Relation vs Relation word-level
         return "correct"
   return "incorrect"
 
-def compareAbstract(sbj, obj, text): #Sentence to Paragraph level matching
+def compare_abstract(sbj, obj, text): #Sentence to Paragraph level matching
   if sbj and obj:
     sbjAbstract = get_dbpedia_abstract(sbj)
     objAbstract = get_dbpedia_abstract(obj)
@@ -205,16 +208,16 @@ def compareAbstract(sbj, obj, text): #Sentence to Paragraph level matching
     return "incorrect"
 
 def betterSim(sentence1, sentence2): #Sentence level similarity
-  embedding1 = sentenceTransformerModel.encode(sentence1, convert_to_tensor=True)
-  embedding2 = sentenceTransformerModel.encode(sentence2, convert_to_tensor=True)
+  embedding1 = sentence_transformer_model.encode(sentence1, convert_to_tensor=True)
+  embedding2 = sentence_transformer_model.encode(sentence2, convert_to_tensor=True)
   return util.cos_sim(embedding1, embedding2)
 
 def cosine_similarity(vec1, vec2):
   return dot(vec1, vec2) / (norm(vec1) * norm(vec2))
 
 def synonyms(word1, word2):
-  vector1 = word2vecModel[word1]
-  vector2 = word2vecModel[word2]
+  vector1 = word2vec_model[word1]
+  vector2 = word2vec_model[word2]
   similarity = cosine_similarity(vector1, vector2)
   threshold = 0.55
   if similarity >= threshold:
@@ -222,7 +225,7 @@ def synonyms(word1, word2):
   else:
     return False
 
-def extractRelation(sentence):
+def extract_relation(sentence):
   doc = nlp(sentence)
   entities = [ent.text for ent in doc.ents]
   relation = None
@@ -250,18 +253,33 @@ def lemmatise(word):
   doc = nlp(word)
   return doc[0].lemma_
 
+def check_negation(text):
+    #If negating words are present, we need to flip the answer
+    doc = nlp(text)
+    negation_cues = ["not", "no", "never", "n't", "without"]
+    for negation in negation_cues:
+      if re.search(r"\b" + re.escape(negation) + r"\b", text):
+        return True
+      return False
 
-def factCheckPipeline(sbj, obj, text):
+
+def factcheck_pipeline(sbj, obj, text):
   try:
-    if extractRelation(text): #Determine if the relation is parsable
-      answer_1 = checkSynonyms(sbj, obj, extractRelation(text)) #If possible, and exists a relation between the two objects, then check if synonym
-      if answer_1: #Can return None, when no relation in DB 
-        if answer_1 == "correct":
-          return True
+    if extract_relation(text): #Determine if the relation is parsable
+      answer_1 = check_synonyms(sbj, obj, extract_relation(text)) #If possible, and exists a relation between the two objects, then check if synonym
+      if answer_1: #Can return None, when no relation in DB
+        if(check_negation(text)): #Negation only needed for synonym matching
+          if answer_1 == "correct":
+            return False
+          else:
+            return True
         else:
-          return False
+          if answer_1 == "correct":
+            return True
+          else:
+            return False
     else: #If relation cannot be parsed, then just check similarity between queries
-      answer_2 = checkQuery(sbj, obj, text) #Restructures query and relation, then compares similarity between two sentences
+      answer_2 = check_query(sbj, obj, text) #Restructures query and relation, then compares similarity between two sentences
       if answer_2: #Can return None, when no relation in DB
         if answer_2 == "correct":
           return True
@@ -270,7 +288,7 @@ def factCheckPipeline(sbj, obj, text):
     #If we arrive here, the relation cannot be parsed with our functions
     #and the relationship does not exist in graph (incomplete knowledge)
     #Therefore we just compare the query to the wikipedia page
-    answer_3 = compareAbstract(sbj, obj, text)
+    answer_3 = compare_abstract(sbj, obj, text)
     if answer_3:
       if answer_3 == "correct":
         return True
@@ -295,16 +313,16 @@ def verifyAnswer(question, entity, extractedEntities):
     obj = max_entity[1]
 
     if (determine_question_type(question) == 'entity'):
-      text = contentReplacer(entity,question)
+      text = content_replacer(entity,question)
     else:
-      text = polarToDeclarative(question)
+      text = polar_to_declarative(question)
       polar = True
 
-    subj = wikipediaToDBPedia(subj)
-    obj = wikipediaToDBPedia(obj)
+    subj = wikipedia_to_dbpedia(subj)
+    obj = wikipedia_to_dbpedia(obj)
 
     if polar:
-      ans = factCheckPipeline(subj,obj,text)
+      ans = factcheck_pipeline(subj,obj,text)
       if ans and entity == 'Yes':
         return "correct"
       elif not ans and entity == 'No':
@@ -312,7 +330,7 @@ def verifyAnswer(question, entity, extractedEntities):
       else:
         return "incorrect"
     else:
-      ans = factCheckPipeline(subj,obj,text)
+      ans = factcheck_pipeline(subj,obj,text)
       if ans:
         return "correct"
       else:

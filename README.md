@@ -42,4 +42,4 @@ To run this application, run main.py. Output will be generated in output.txt fil
 ```jsx
 python main.py
 ```
-Note: Ensure adding input.txt to this folder before mounting this application. In case of a different file name, it can be renamed in main.py (line 13).
+Note: Ensure adding input.txt to this folder before mounting this application. In case of a different file name, it can be renamed in main.py (line 14).
